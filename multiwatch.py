@@ -159,7 +159,7 @@ def main():
     watches = list(map(WatcherBlock, config['processes']))
     pile = urwid.AttrWrap(urwid.Pile([('pack', w.widget) for w in watches]), 'body')
     text_header = urwid.Text("{} on {}".format(os.path.basename( sys.argv[0] ), socket.gethostname()))
-    copying_text = urwid.Text("(c) 2017 Nicholas Booker.  GPLv3+")
+    copying_text = urwid.Text("Copyright 2017 Nicholas Booker. License: GPLv3+")
     time_text = urwid.Text("")
     header = urwid.AttrWrap(urwid.Columns([text_header, time_text, copying_text]), 'header')
     main_frame = urwid.Frame(pile, header=header)
