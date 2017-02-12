@@ -4,6 +4,8 @@ import sys
 import shlex
 import weakref
 import argparse
+import socket
+import datetime
 
 import yaml
 import urwid
@@ -149,13 +151,25 @@ def main():
     config = yaml.safe_load(options.specfile)
     watches = list(map(WatcherBlock, config['processes']))
     pile = urwid.Pile([w.widget for w in watches])
-    fill = urwid.Filler(pile, 'top')
+    text_header = urwid.Text("{} on {}".format(sys.argv[0], socket.gethostname()))
+    time_text = urwid.Text("")
+    header = urwid.AttrWrap(urwid.Columns([text_header, time_text]), 'header')
+    main_frame = urwid.Frame(pile, header=header)
+    #fill = urwid.Filler(pile, 'top')
     palette = [
         ('title', 'white,underline', 'black', 'bold,underline'),
+        ('header', 'black', 'white', 'bold,underline'),
         ('status_error', 'light red', 'black', 'standout'),
         ('status_ok', 'light green', 'black', 'standout'),
     ]
-    urwid_loop = urwid.MainLoop(fill, palette=palette, handle_mouse=False, unhandled_input=key_handler, event_loop=urwid.TwistedEventLoop())
+    urwid_loop = urwid.MainLoop(main_frame, palette=palette, handle_mouse=False, unhandled_input=key_handler, event_loop=urwid.TwistedEventLoop())
+    def refresh_time(*args, **kwargs):
+        current_time = datetime.datetime.now()
+        next_minute = current_time.replace(second=0) + datetime.timedelta(minutes=1)
+        time_text.set_text(current_time.strftime("%Y-%m-%d %H:%M"))
+        urwid_loop.set_alarm_at(next_minute.replace(tzinfo=datetime.timezone.utc).timestamp(), refresh_time)
+
+    reactor.callWhenRunning(refresh_time)
     for watch in watches:
         watch.urwid_loop = urwid_loop
         watch.twisted_reactor = reactor
