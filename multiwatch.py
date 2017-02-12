@@ -147,7 +147,6 @@ def main():
     options = parser.parse_args()
     config = yaml.safe_load(options.specfile)
     watches = list(map(WatcherBlock, config['processes']))
-    #watch = WatcherBlock({'arglist': arglist})
     pile = urwid.Pile([w.widget for w in watches])
     fill = urwid.Filler(pile, 'top')
     palette = [
@@ -159,7 +158,6 @@ def main():
     for watch in watches:
         watch.urwid_loop = urwid_loop
         watch.twisted_reactor = reactor
-        #watch.trigger()
         reactor.callWhenRunning(watch.trigger)
     urwid_loop.run()   # replaces reactor.run()
 
