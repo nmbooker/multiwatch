@@ -39,7 +39,7 @@ class WatcherBlock(object):
         return ' '.join(map(shlex.quote, self.get_arglist()))
 
     def _build_protocol(self):
-        self.protocol = WatchProtocol2(self)
+        self.protocol = WatchProtocol(self)
 
     def run(self):
         arglist = self.get_arglist()
@@ -96,7 +96,7 @@ class WatchOutputPane(urwid.WidgetWrap):
         self.output_text.set_text(output)
 
 
-class WatchProtocol2(protocol.ProcessProtocol):
+class WatchProtocol(protocol.ProcessProtocol):
     def __init__(self, controller):
         self.controller = weakref.proxy(controller)
 
@@ -114,34 +114,6 @@ class WatchProtocol2(protocol.ProcessProtocol):
     def processEnded(self, reason):
         output = b''.join(self.output_blocks).decode("utf-8")
         self.controller.process_finished(output, reason.value.exitCode)
-
-
-class WatchProtocol(protocol.ProcessProtocol):
-    def __init__(self, arglist, widget, mainloop, timeout=5):
-        self.widget = widget
-        self.arglist = arglist
-        self.mainloop = mainloop
-        self.starter = None
-        self.widget.set_timeout(timeout)
-        self.timeout = timeout
-
-    def connectionMade(self):
-        self.output_blocks = []
-        self.transport.closeStdin()   # no standard input to send
-        self.widget.process_started()
-
-    def outReceived(self, data):
-        self.output_blocks.append(data)
-
-    def errReceived(self, data):
-        self.output_blocks.append(data)
-
-    def processEnded(self, reason):
-        output = b''.join(self.output_blocks).decode("utf-8")
-        self.widget.process_finished(output, reason.value.exitCode)
-        self.mainloop.draw_screen()
-        if self.starter:
-            self.mainloop.set_alarm_in(self.timeout, self.starter)
 
 def key_handler(key):
     if key in (r'q', r'Q'):
