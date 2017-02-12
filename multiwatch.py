@@ -155,7 +155,6 @@ def main():
     time_text = urwid.Text("")
     header = urwid.AttrWrap(urwid.Columns([text_header, time_text]), 'header')
     main_frame = urwid.Frame(pile, header=header)
-    #fill = urwid.Filler(pile, 'top')
     palette = [
         ('title', 'white,underline', 'black', 'bold,underline'),
         ('header', 'black', 'white', 'bold,underline'),
