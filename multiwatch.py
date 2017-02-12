@@ -141,13 +141,19 @@ class WatchProtocol(protocol.ProcessProtocol):
         self.controller.process_finished(output, reason.value.exitCode)
 
 
-def key_handler(key):
-    if key in (r'q', r'Q'):
-        raise urwid.ExitMainLoop()
+class UnhandledInputHandler(object):
+    def __init__(self, options):
+        self.options = options
+    def __call__(self, key):
+        if self.options.no_quit_key:
+            return
+        if key in (r'q', r'Q'):
+            raise urwid.ExitMainLoop()
 
 def main():
     parser = argparse.ArgumentParser(description="watch multiple command outputs")
     parser.add_argument('--specfile', '-f', type=argparse.FileType('rb'), required=True, help='YAML file containing commands to run')
+    parser.add_argument('--no-quit-key', action='store_true', help='disable quitting with the Q key')
     options = parser.parse_args()
     config = yaml.safe_load(options.specfile)
     watches = list(map(WatcherBlock, config['processes']))
@@ -164,7 +170,7 @@ def main():
         ('status_error', 'light red', 'black'),
         ('status_ok', 'light green', 'black'),
     ]
-    urwid_loop = urwid.MainLoop(main_frame, palette=palette, handle_mouse=False, unhandled_input=key_handler, event_loop=urwid.TwistedEventLoop())
+    urwid_loop = urwid.MainLoop(main_frame, palette=palette, handle_mouse=False, unhandled_input=UnhandledInputHandler(options), event_loop=urwid.TwistedEventLoop())
     def refresh_time(*args, **kwargs):
         current_time = datetime.datetime.now()
         next_minute = current_time.replace(second=0) + datetime.timedelta(minutes=1)
