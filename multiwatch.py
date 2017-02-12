@@ -3,7 +3,9 @@
 import sys
 import shlex
 import weakref
+import argparse
 
+import yaml
 import urwid
 from twisted.internet import reactor, protocol
 
@@ -120,18 +122,25 @@ def key_handler(key):
         raise urwid.ExitMainLoop()
 
 def main():
-    arglist = sys.argv[1:]
-    watch = WatcherBlock({'arglist': arglist})
-    fill = urwid.Filler(watch.widget, 'top')
+    parser = argparse.ArgumentParser(description="watch multiple command outputs")
+    parser.add_argument('--specfile', '-f', type=argparse.FileType('rb'), required=True, help='YAML file containing commands to run')
+    options = parser.parse_args()
+    config = yaml.safe_load(options.specfile)
+    watches = list(map(WatcherBlock, config['processes']))
+    #watch = WatcherBlock({'arglist': arglist})
+    pile = urwid.Pile([w.widget for w in watches])
+    fill = urwid.Filler(pile, 'top')
     palette = [
         ('title', 'white,underline', 'black', 'bold,underline'),
         ('status_error', 'light red', 'black', 'standout'),
         ('status_ok', 'light green', 'black', 'standout'),
     ]
     urwid_loop = urwid.MainLoop(fill, palette=palette, handle_mouse=False, unhandled_input=key_handler, event_loop=urwid.TwistedEventLoop())
-    watch.urwid_loop = urwid_loop
-    watch.twisted_reactor = reactor
-    reactor.callWhenRunning(watch.trigger)
+    for watch in watches:
+        watch.urwid_loop = urwid_loop
+        watch.twisted_reactor = reactor
+        #watch.trigger()
+        reactor.callWhenRunning(watch.trigger)
     urwid_loop.run()   # replaces reactor.run()
 
 if __name__ == "__main__":
