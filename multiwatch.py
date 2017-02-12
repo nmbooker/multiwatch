@@ -150,16 +150,17 @@ def main():
     options = parser.parse_args()
     config = yaml.safe_load(options.specfile)
     watches = list(map(WatcherBlock, config['processes']))
-    pile = urwid.Pile([('pack', w.widget) for w in watches])
+    pile = urwid.AttrWrap(urwid.Pile([('pack', w.widget) for w in watches]), 'body')
     text_header = urwid.Text("{} on {}".format(sys.argv[0], socket.gethostname()))
     time_text = urwid.Text("")
     header = urwid.AttrWrap(urwid.Columns([text_header, time_text]), 'header')
     main_frame = urwid.Frame(pile, header=header)
     palette = [
-        ('title', 'white,underline', 'black', 'bold,underline'),
-        ('header', 'black', 'white', 'bold,underline'),
-        ('status_error', 'light red', 'black', 'standout'),
-        ('status_ok', 'light green', 'black', 'standout'),
+        ('title', 'white,underline', 'black'),
+        ('header', 'black', 'light gray'),
+        ('body', 'light gray', 'black'),
+        ('status_error', 'light red', 'black'),
+        ('status_ok', 'light green', 'black'),
     ]
     urwid_loop = urwid.MainLoop(main_frame, palette=palette, handle_mouse=False, unhandled_input=key_handler, event_loop=urwid.TwistedEventLoop())
     def refresh_time(*args, **kwargs):
