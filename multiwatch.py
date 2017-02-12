@@ -21,6 +21,7 @@ class WatcherBlock(object):
         self.config = config
         self._build_widget()
         self._build_protocol()
+        self.widget.set_timeout(self.get_timeout())
 
     def _build_widget(self):
         """Build the widget, and save it as self.widget"""
@@ -74,6 +75,7 @@ class WatcherBlock(object):
         self.urwid_loop.draw_screen()
         self.urwid_loop.set_alarm_in(self.get_timeout(), self.trigger)
 
+
 class WatchOutputPane(urwid.WidgetWrap):
     def __init__(self, title):
         self.title_text = urwid.Text(('title', title))
@@ -81,6 +83,7 @@ class WatchOutputPane(urwid.WidgetWrap):
         self.status_text = urwid.Text('new')
         self.exit_label = urwid.Text('Exitcode: ')
         self.exit_text = urwid.Text('n/a')
+        self.timeout_label = urwid.Text('Every ')
         self.timeout_text = urwid.Text('')
         self.output_text = urwid.Text('')
         self.header_pack = urwid.Columns(
@@ -89,7 +92,8 @@ class WatchOutputPane(urwid.WidgetWrap):
                 (8, self.status_text),
                 ('pack', self.exit_label),
                 (5, self.exit_text),
-                #('pack', self.title_text),
+                ('pack', self.timeout_label),
+                (10, self.timeout_text),
             ]
         )
         self.overall_pack = urwid.Pile(
@@ -102,7 +106,8 @@ class WatchOutputPane(urwid.WidgetWrap):
         urwid.WidgetWrap.__init__(self, self.linebox)
 
     def set_timeout(self, seconds):
-        self.timeout_text.set_text(str(seconds))
+        """Updates the timeout text widget"""
+        self.timeout_text.set_text(str(seconds) + 's')
 
     def process_started(self):
         self.status_text.set_text('R')
