@@ -1,0 +1,3 @@
+processes:
+  - arglist: [date]
+  - arglist: [df, -h]
