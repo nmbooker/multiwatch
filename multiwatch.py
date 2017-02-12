@@ -6,6 +6,7 @@ import weakref
 import argparse
 import socket
 import datetime
+import os
 
 import yaml
 import urwid
@@ -151,7 +152,7 @@ def main():
     config = yaml.safe_load(options.specfile)
     watches = list(map(WatcherBlock, config['processes']))
     pile = urwid.AttrWrap(urwid.Pile([('pack', w.widget) for w in watches]), 'body')
-    text_header = urwid.Text("{} on {}".format(sys.argv[0], socket.gethostname()))
+    text_header = urwid.Text("{} on {}".format(os.path.basename( sys.argv[0] ), socket.gethostname()))
     time_text = urwid.Text("")
     header = urwid.AttrWrap(urwid.Columns([text_header, time_text]), 'header')
     main_frame = urwid.Frame(pile, header=header)
