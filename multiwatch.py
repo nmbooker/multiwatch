@@ -137,6 +137,7 @@ class WatchProtocol(protocol.ProcessProtocol):
         output = b''.join(self.output_blocks).decode("utf-8")
         self.controller.process_finished(output, reason.value.exitCode)
 
+
 def key_handler(key):
     if key in (r'q', r'Q'):
         raise urwid.ExitMainLoop()
