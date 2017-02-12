@@ -23,38 +23,53 @@ class WatcherBlock(object):
         self._build_protocol()
 
     def _build_widget(self):
+        """Build the widget, and save it as self.widget"""
         self.widget = WatchOutputPane(self.get_title())
 
     def get_title(self):
+        """Return the frame title.
+        """
         try:
             return self.config['title']
         except KeyError:
             return self.get_default_title()
 
     def get_arglist(self):
+        """Return the arglist for the command to be run."""
         return self.config['arglist']
 
     def get_timeout(self):
+        """Return the timeout between runs.
+        """
         return self.config.get('timeout', 5)
 
     def get_default_title(self):
+        """Return the default title that should be used if title not configured.
+        """
         return ' '.join(map(shlex.quote, self.get_arglist()))
 
     def _build_protocol(self):
+        """Build the protocol, and save it as self.protocol"""
         self.protocol = WatchProtocol(self)
 
     def run(self):
+        """Run the watched program asynchronously.
+        """
         arglist = self.get_arglist()
         self.twisted_reactor.spawnProcess(self.protocol, arglist[0], arglist)
 
     def trigger(self, *args, **kwargs):
+        """Generic trigger for use as callback to start of main loop or timer
+        """
         self.run()
 
     def process_started(self):
+        """This is run whenever a new process is started."""
         self.widget.process_started()
         self.urwid_loop.draw_screen()
 
     def process_finished(self, output, exit_code):
+        """This is run whenever the current process completes."""
         self.widget.process_finished(output, exit_code)
         self.urwid_loop.draw_screen()
         self.urwid_loop.set_alarm_in(self.get_timeout(), self.trigger)
