@@ -150,7 +150,7 @@ def main():
     options = parser.parse_args()
     config = yaml.safe_load(options.specfile)
     watches = list(map(WatcherBlock, config['processes']))
-    pile = urwid.Pile([w.widget for w in watches])
+    pile = urwid.Pile([('pack', w.widget) for w in watches])
     text_header = urwid.Text("{} on {}".format(sys.argv[0], socket.gethostname()))
     time_text = urwid.Text("")
     header = urwid.AttrWrap(urwid.Columns([text_header, time_text]), 'header')
