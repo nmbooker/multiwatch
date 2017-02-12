@@ -113,37 +113,61 @@ class WatchOutputPane(urwid.WidgetWrap):
         self.timeout_text.set_text(str(seconds) + 's')
 
     def process_started(self):
+        """Update display to say the watched program is running."""
         self.status_text.set_text('R')
 
     def process_finished(self, output, exit_code):
+        """Update display with output and status of completed program."""
         self.status_text.set_text('.')
         self.exit_text.set_text(('status_error' if exit_code else 'status_ok', str(exit_code)))
         self.output_text.set_text(output)
 
 
 class WatchProtocol(protocol.ProcessProtocol):
+    """Twisted protocol for capturing output.
+
+    When the process starts, the controller is notified through its
+    process_started() method, and the internal output buffer is cleared.
+
+    All output from the running process, on stderr or stdout, is appended
+    to the internal buffer.
+
+    When the process ends, the controller is sent the aggregated output
+    held in the internal buffer and
+    the exit code through a call to its process_finished() method.
+    """
     def __init__(self, controller):
         self.controller = weakref.proxy(controller)
 
     def connectionMade(self):
+        """Called when the process starts."""
         self.output_blocks = []
         self.transport.closeStdin()   # no standard input to send
         self.controller.process_started()
 
     def outReceived(self, data):
+        """Called when there's data on stdout"""
         self.output_blocks.append(data)
 
     def errReceived(self, data):
+        """Called when there's data on stderr"""
         self.output_blocks.append(data)
 
     def processEnded(self, reason):
+        """Called when the process finishes"""
         output = b''.join(self.output_blocks).decode("utf-8")
         self.controller.process_finished(output, reason.value.exitCode)
 
 
 class UnhandledInputHandler(object):
+    """An instance of this is used as unhandled_input on the urwid.MainLoop.
+    """
     def __init__(self, options):
+        """
+        options: The script's options from argparse.
+        """
         self.options = options
+
     def __call__(self, key):
         if self.options.no_quit_key:
             return
