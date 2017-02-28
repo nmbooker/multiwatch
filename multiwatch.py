@@ -21,6 +21,9 @@ class TimeoutWaiter(object):
     def __init__(self, timeout):
         self.timeout = timeout
 
+    def representation(self):
+        return "Every {} s".format(self.timeout)
+
     def start(self, controller):
         controller.urwid_loop.set_alarm_in(self.timeout, controller.trigger)
 
@@ -29,6 +32,9 @@ class CommandWaiter(object):
     def __init__(self, args):
         self.args = args
         self.protocol = CommandWaiterProtocol(self)
+
+    def representation(object):
+        return "Waits on command"
 
     def start(self, controller):
         self.controller = weakref.proxy(controller)
@@ -59,7 +65,7 @@ class WatcherBlock(object):
         self.waiter = waiter_factory(config)
         self._build_widget()
         self._build_protocol()
-        self.widget.set_timeout(self.get_timeout())
+        self.widget.set_wait_text(self.waiter.representation())
 
     def _build_widget(self):
         """Build the widget, and save it as self.widget"""
@@ -121,8 +127,7 @@ class WatchOutputPane(urwid.WidgetWrap):
         self.status_text = urwid.Text('new')
         self.exit_label = urwid.Text('Exitcode: ')
         self.exit_text = urwid.Text('n/a')
-        self.timeout_label = urwid.Text('Every ')
-        self.timeout_text = urwid.Text('')
+        self.wait_text = urwid.Text('Every ')
         self.output_text = urwid.Text('')
         self.header_pack = urwid.Columns(
             widget_list=[
@@ -130,8 +135,7 @@ class WatchOutputPane(urwid.WidgetWrap):
                 (8, self.status_text),
                 ('pack', self.exit_label),
                 (5, self.exit_text),
-                ('pack', self.timeout_label),
-                (10, self.timeout_text),
+                ('pack', self.wait_text),
             ]
         )
         self.overall_pack = urwid.Pile(
@@ -143,9 +147,8 @@ class WatchOutputPane(urwid.WidgetWrap):
         self.linebox = urwid.LineBox(self.overall_pack, title=title)
         urwid.WidgetWrap.__init__(self, self.linebox)
 
-    def set_timeout(self, seconds):
-        """Updates the timeout text widget"""
-        self.timeout_text.set_text(str(seconds) + 's')
+    def set_wait_text(self, text):
+        self.wait_text.set_text(text)
 
     def process_started(self):
         """Update display to say the watched program is running."""
