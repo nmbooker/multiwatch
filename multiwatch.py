@@ -12,6 +12,40 @@ import yaml
 import urwid
 from twisted.internet import reactor, protocol
 
+def waiter_factory(config):
+    if 'wait_command' in config:
+        return CommandWaiter(config['wait_command']['cmd'])
+    return TimeoutWaiter(config.get('timeout', 5))
+
+class TimeoutWaiter(object):
+    def __init__(self, timeout):
+        self.timeout = timeout
+
+    def start(self, controller):
+        controller.urwid_loop.set_alarm_in(self.timeout, controller.trigger)
+
+
+class CommandWaiter(object):
+    def __init__(self, args):
+        self.args = args
+        self.protocol = CommandWaiterProtocol(self)
+
+    def start(self, controller):
+        self.controller = weakref.proxy(controller)
+        controller.twisted_reactor.spawnProcess(self.protocol, self.args[0], self.args)
+
+    def process_finished(self):
+        self.controller.trigger()
+
+
+class CommandWaiterProtocol(protocol.ProcessProtocol):
+    def __init__(self, waiter):
+        self.waiter = weakref.proxy(waiter)
+
+    def processEnded(self, reason):
+        """Called when the process finishes"""
+        self.waiter.process_finished()
+
 class WatcherBlock(object):
     """Watch the output of a program.
 
@@ -22,6 +56,7 @@ class WatcherBlock(object):
     """
     def __init__(self, config):
         self.config = config
+        self.waiter = waiter_factory(config)
         self._build_widget()
         self._build_protocol()
         self.widget.set_timeout(self.get_timeout())
@@ -76,7 +111,7 @@ class WatcherBlock(object):
         """This is run whenever the current process completes."""
         self.widget.process_finished(output, exit_code)
         self.urwid_loop.draw_screen()
-        self.urwid_loop.set_alarm_in(self.get_timeout(), self.trigger)
+        self.waiter.start(self)
 
 
 class WatchOutputPane(urwid.WidgetWrap):
@@ -121,6 +156,7 @@ class WatchOutputPane(urwid.WidgetWrap):
         self.status_text.set_text('.')
         self.exit_text.set_text(('status_error' if exit_code else 'status_ok', str(exit_code)))
         self.output_text.set_text(output)
+
 
 
 class WatchProtocol(protocol.ProcessProtocol):
